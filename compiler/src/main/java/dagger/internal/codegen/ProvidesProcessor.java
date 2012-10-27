@@ -22,13 +22,7 @@ import dagger.internal.Binding;
 import dagger.internal.Linker;
 import dagger.internal.ModuleAdapter;
 import dagger.internal.SetBinding;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -44,6 +38,13 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dagger.internal.plugins.loading.ClassloadingPlugin.MODULE_ADAPTER_SUFFIX;
 import static java.lang.reflect.Modifier.FINAL;
@@ -61,6 +62,7 @@ import static java.lang.reflect.Modifier.STATIC;
 public final class ProvidesProcessor extends AbstractProcessor {
   private static final String BINDINGS_MAP = CodeGen.parameterizedType(
       Map.class, String.class.getName(), Binding.class.getName() + "<?>");
+  private Map<String, Boolean> classNameHash = new HashMap<String, Boolean>();
 
   // TODO: include @Provides methods from the superclass
 
@@ -201,14 +203,20 @@ public final class ProvidesProcessor extends AbstractProcessor {
     writer.annotation(Override.class);
     writer.beginMethod("void", "getBindings", PUBLIC, BINDINGS_MAP, "map");
     for (ExecutableElement providerMethod : providerMethods) {
+      String className = bindingClassName(providerMethod);
+      if (classNameHash.get(className)) {
+        error("Duplicate @Provides methods for name " + providerMethod.getSimpleName());
+        return;
+      }
+      classNameHash.put(className, true);
       if (providerMethod.getAnnotation(OneOf.class) != null) {
         String key = GeneratorKeys.getElementKey(providerMethod);
-        writer.statement("SetBinding.add(map, %s, new %s(module))", JavaWriter.stringLiteral(key),
-            bindingClassName(providerMethod));
+        writer.statement("SetBinding.add(map, %className, new %className(module))", JavaWriter.stringLiteral(key),
+            className);
       } else {
         String key = GeneratorKeys.get(providerMethod);
-        writer.statement("map.put(%s, new %s(module))", JavaWriter.stringLiteral(key),
-            bindingClassName(providerMethod));
+        writer.statement("map.put(%className, new %className(module))", JavaWriter.stringLiteral(key),
+            className);
       }
     }
     writer.endMethod();
