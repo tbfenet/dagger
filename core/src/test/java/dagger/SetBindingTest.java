@@ -19,6 +19,7 @@ package dagger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import org.fest.util.Collections;
 import org.junit.Test;
 
 import static dagger.Provides.Type.SET;
@@ -132,6 +134,23 @@ public final class SetBindingTest {
     TestEntryPoint ep = injectWithModule(new TestEntryPoint(), new TestModule());
     assertEquals(set("string1", "string2"), ep.strings);
     assertEquals(set("string4", "string3"), ep.fooStrings);
+  }
+
+  @Test public void multiValueBindings_TypeAndSet() {
+    class TestEntryPoint {
+      @Inject Set<String> strings;
+    }
+
+    @Module(entryPoints = TestEntryPoint.class)
+    class TestModule {
+      @Provides(type=SET) String provideString1() { return "string1"; }
+      @Provides(type=SET) Collection<String> provideStrings2And3() {
+        return Collections.set("string2", "string3");
+      }
+    }
+
+    TestEntryPoint ep = injectWithModule(new TestEntryPoint(), new TestModule());
+    assertEquals(set("string1", "string2", "string3"), ep.strings);
   }
 
   // TODO(cgruber): Move this into an example project.
