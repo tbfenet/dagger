@@ -30,8 +30,8 @@ import javax.inject.Inject;
  * Uses reflection to create bindings, module adapters and static injections.
  */
 public final class ReflectivePlugin implements Plugin {
-  @Override public Binding<?> getAtInjectBinding(
-      String key, String className, boolean mustBeInjectable) {
+  @Override public Binding<?> getAtInjectBinding(String key, String className,
+      boolean mustBeInjectable) {
     Class<?> c;
     try {
       c = Class.forName(className);

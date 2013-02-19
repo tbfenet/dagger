@@ -196,6 +196,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
 
     boolean overrides = (Boolean) module.get("overrides");
     boolean complete = (Boolean) module.get("complete");
+    boolean library = (Boolean) module.get("library");
 
     String adapterName = CodeGen.adapterName(type, MODULE_ADAPTER_SUFFIX);
     JavaFileObject sourceFile = processingEnv.getFiler()
@@ -253,7 +254,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
     writer.emitEmptyLine();
     writer.beginMethod(null, adapterName, PUBLIC);
     writer.emitStatement("super(ENTRY_POINTS, STATIC_INJECTIONS, %s /*overrides*/, "
-        + "INCLUDES, %s /*complete*/)", overrides, complete);
+        + "INCLUDES, %s /*complete*/, %s /*library*/)", overrides, complete, library);
     writer.endMethod();
 
     ExecutableElement noArgsConstructor = CodeGen.getNoArgsConstructor(type);
@@ -299,7 +300,8 @@ public final class ProvidesProcessor extends AbstractProcessor {
     }
 
     for (ExecutableElement providerMethod : providerMethods) {
-      writeProvidesAdapter(writer, providerMethod, methodToClassName, methodNameToNextId);
+      writeProvidesAdapter(writer, providerMethod, methodToClassName, methodNameToNextId,
+          library);
     }
 
     writer.endType();
@@ -366,7 +368,7 @@ public final class ProvidesProcessor extends AbstractProcessor {
 
   private void writeProvidesAdapter(JavaWriter writer, ExecutableElement providerMethod,
       Map<ExecutableElement, String> methodToClassName,
-      Map<String, AtomicInteger> methodNameToNextId)
+      Map<String, AtomicInteger> methodNameToNextId, boolean library)
       throws IOException {
     String methodName = providerMethod.getSimpleName().toString();
     String moduleType = CodeGen.typeToString(providerMethod.getEnclosingElement().asType());
@@ -391,11 +393,13 @@ public final class ProvidesProcessor extends AbstractProcessor {
     writer.emitEmptyLine();
     writer.beginMethod(null, className, PUBLIC, moduleType, "module");
     boolean singleton = providerMethod.getAnnotation(Singleton.class) != null;
+
     String key = JavaWriter.stringLiteral(GeneratorKeys.get(providerMethod));
     String membersKey = null;
-    writer.emitStatement("super(%s, %s, %s, %s.class)",
-        key, membersKey, (singleton ? "IS_SINGLETON" : "NOT_SINGLETON"), moduleType);
+    writer.emitStatement("super(%s, %s, %s, %s.class)", key, membersKey,
+        (singleton ? "IS_SINGLETON" : "NOT_SINGLETON"), moduleType);
     writer.emitStatement("this.module = module");
+    writer.emitStatement("setNecessary(%s)", !library);
     writer.endMethod();
 
     if (dependent) {

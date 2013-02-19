@@ -261,8 +261,8 @@ public final class InjectProcessor extends AbstractProcessor {
         : null;
     String membersKey = JavaWriter.stringLiteral(GeneratorKeys.rawMembersKey(type.asType()));
     boolean singleton = type.getAnnotation(Singleton.class) != null;
-    writer.emitStatement("super(%s, %s, %s, %s.class)",
-        key, membersKey, (singleton ? "IS_SINGLETON" : "NOT_SINGLETON"), strippedTypeName);
+    writer.emitStatement("super(%s, %s, %s, %s.class)", key, membersKey,
+        (singleton ? "IS_SINGLETON" : "NOT_SINGLETON"), strippedTypeName);
     writer.endMethod();
     if (dependent) {
       writer.emitEmptyLine();

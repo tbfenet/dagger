@@ -33,8 +33,8 @@ public final class ClassloadingPlugin implements Plugin {
     return instantiate(moduleClass.getName(), MODULE_ADAPTER_SUFFIX);
   }
 
-  @Override public Binding<?> getAtInjectBinding(
-      String key, String className, boolean mustBeInjectable) {
+  @Override public Binding<?> getAtInjectBinding(String key, String className,
+      boolean mustBeInjectable) {
     return instantiate(className, INJECT_ADAPTER_SUFFIX);
   }
 
